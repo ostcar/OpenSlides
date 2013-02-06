@@ -16,7 +16,7 @@ from django.utils.translation import ugettext as _
 from openslides.utils.forms import CssClassMixin
 from openslides.utils.person import PersonFormField, MultiplePersonFormField
 from .models import Motion
-from .workflow import motion_workflow_choices
+from .workflow import Workflow
 
 
 class BaseMotionForm(forms.ModelForm, CssClassMixin):
@@ -145,4 +145,4 @@ class ConfigForm(CssClassMixin, forms.Form):
         widget=forms.Select(),
         label=_("Workflow for the motions"),
         required=True,
-        choices=motion_workflow_choices())
+        choices=[(workflow.pk, workflow.name) for workflow in Workflow.objects.all()])
