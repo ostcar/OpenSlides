@@ -35,7 +35,7 @@ from openslides.agenda.models import Item
 from .models import Motion, MotionSubmitter, MotionSupporter, MotionPoll, MotionVersion
 from .forms import (BaseMotionForm, MotionSubmitterMixin, MotionSupporterMixin,
                     MotionCreateNewVersionMixin, ConfigForm)
-from .workflow import WorkflowError
+from .workflow import State, WorkflowError
 from .pdf import motions_to_pdf, motion_to_pdf
 
 
@@ -395,8 +395,8 @@ class MotionSetStateView(SingleObjectMixin, RedirectView):
             if self.reset:
                 self.object.reset_state()
             else:
-                self.object.state = kwargs['state']
-        except WorkflowError, e:
+                self.object.state = State.objects.get(pk=kwargs['state'])
+        except WorkflowError, e:  # To do: Is a WorkflowError still possible here?
             messages.error(request, e)
         else:
             self.object.save()

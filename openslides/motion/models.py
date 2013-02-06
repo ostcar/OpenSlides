@@ -33,8 +33,7 @@ from openslides.projector.api import register_slidemodel
 from openslides.projector.models import SlideMixin
 from openslides.agenda.models import Item
 
-from .workflow import (motion_workflow_choices, get_state, State, WorkflowError,
-                       DUMMY_STATE)
+from .workflow import Workflow, State, WorkflowError
 
 
 class Motion(SlideMixin, models.Model):
@@ -55,11 +54,10 @@ class Motion(SlideMixin, models.Model):
     version. Like the Sighted versions on Wikipedia.
     """
 
-    state_id = models.CharField(max_length=3)
-    """The id of a state object.
+    state = models.ForeignKey(State, null=True)
+    """The related state object.
 
-    This Attribute is used be motion.state to identify the current state of the
-    motion.
+    This attribute is to get the current state of the motion.
     """
 
     identifier = models.CharField(max_length=255, null=True, blank=True,
@@ -88,7 +86,7 @@ class Motion(SlideMixin, models.Model):
     def save(self, *args, **kwargs):
         """Save the motion.
 
-        1. Set the state of a new motion to the default motion.
+        1. Set the state of a new motion to the default state.
         2. Save the motion object.
         3. Save the version Data.
         4. Set the active version for the motion.
@@ -105,7 +103,7 @@ class Motion(SlideMixin, models.Model):
         the config 'motion_create_new_version' is set to
         'ALLWASY_CREATE_NEW_VERSION'.
         """
-        if not self.state_id:
+        if not self.state:
             self.reset_state()
 
         super(Motion, self).save(*args, **kwargs)
@@ -125,7 +123,7 @@ class Motion(SlideMixin, models.Model):
         if hasattr(self, '_new_version') or (new_data and need_new_version):
             version = self.new_version
             del self._new_version
-            version.motion = self  # Test if this line is realy neccessary.
+            version.motion = self  # Test if this line is really neccessary.
         elif new_data and not need_new_version:
             version = self.last_version
         else:
@@ -150,9 +148,9 @@ class Motion(SlideMixin, models.Model):
             version.version_number = version_number + 1
         version.save()
 
-        # Set the active Version of this motion. This has to be done after the
-        # version is saved to the db
-        if not self.state.version_permission or self.active_version is None:
+        # Set the active version of this motion. This has to be done after the
+        # version is saved to the database
+        if not self.state.dont_set_new_version_active or self.active_version is None:
             self.active_version = version
             self.save()
 
@@ -307,7 +305,7 @@ class Motion(SlideMixin, models.Model):
 
     def support(self, person):
         """Add 'person' as a supporter of this motion."""
-        if self.state.support:
+        if self.state.allow_support:
             if not self.is_supporter(person):
                 MotionSupporter(motion=self, person=person).save()
         else:
@@ -315,7 +313,7 @@ class Motion(SlideMixin, models.Model):
 
     def unsupport(self, person):
         """Remove 'person' as supporter from this motion."""
-        if self.state.support:
+        if self.state.allow_support:
             self.supporter.filter(person=person).delete()
         else:
             raise WorkflowError("You can not unsupport a motion in state %s" % self.state.name)
@@ -325,7 +323,7 @@ class Motion(SlideMixin, models.Model):
 
         Return the new poll object.
         """
-        if self.state.create_poll:
+        if self.state.allow_create_poll:
             # TODO: auto increment the poll_number in the Database
             poll_number = self.polls.aggregate(Max('poll_number'))['poll_number__max'] or 0
             poll = MotionPoll.objects.create(motion=self, poll_number=poll_number + 1)
@@ -334,35 +332,12 @@ class Motion(SlideMixin, models.Model):
         else:
             raise WorkflowError("You can not create a poll in state %s" % self.state.name)
 
-    def get_state(self):
-        """Return the state of the motion.
-
-        State is a State object. See openslides.motion.workflow for more informations.
-        """
-        try:
-            return get_state(self.state_id)
-        except WorkflowError:
-            return DUMMY_STATE
-
-    def set_state(self, next_state):
-        """Set the state of this motion.
-
-        The keyargument 'next_state' has to be a State object or an id of a
-        State object.
-        """
-        if not isinstance(next_state, State):
-            next_state = get_state(next_state)
-        if next_state in self.state.next_states:
-            self.state_id = next_state.id
-        else:
-            raise WorkflowError('%s is not a valid next_state' % next_state)
-
-    state = property(get_state, set_state)
-    """The state of the motion as Ste object."""
-
     def reset_state(self):
-        """Set the state to the default state."""
-        self.state_id = get_state('default').id
+        """Set the state to the default state. If the motion is new, it chooses the default workflow from config."""
+        if self.state:
+            self.state = self.state.get_workflow().first_state
+        else:
+            self.state = Workflow.objects.get(pk=config['motion_workflow']).first_state
 
     def slide(self):
         """Return the slide dict."""
@@ -395,13 +370,13 @@ class Motion(SlideMixin, models.Model):
         """
         actions = {
             'edit': ((self.is_submitter(person) and
-                      self.state.edit_as_submitter) or
+                      self.state.allow_submitter_edit) or
                      person.has_perm('motion.can_manage_motion')),
 
             'create_poll': (person.has_perm('motion.can_manage_motion') and
-                            self.state.create_poll),
+                            self.state.allow_create_poll),
 
-            'support': (self.state.support and
+            'support': (self.state.allow_support and
                         config['motion_min_supporters'] > 0 and
                         not self.is_submitter(person)),
 
@@ -410,7 +385,7 @@ class Motion(SlideMixin, models.Model):
         }
         actions['delete'] = actions['edit']  # TODO: Only if the motion has no number
         actions['unsupport'] = actions['support']
-        actions['reset_state'] = 'change_state'
+        actions['reset_state'] = actions['change_state']
         return actions
 
     def write_log(self, message, person=None):
