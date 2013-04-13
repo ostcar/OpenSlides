@@ -14,7 +14,7 @@ from django.conf.urls import url, patterns
 from openslides.agenda.views import (
     Overview, AgendaItemView, SetClosed, ItemUpdate, SpeakerSpeakView,
     ItemCreate, ItemDelete, AgendaPDF, SpeakerAppendView, SpeakerDeleteView,
-    SpeakerListOpenView)
+    SpeakerListOpenView, SpeakerChangeOrderView)
 
 urlpatterns = patterns(
     '',
@@ -89,5 +89,10 @@ urlpatterns = patterns(
     url(r'^(?P<pk>\d+)/speaker/(?P<person_id>[^/]+)/speak/$',
         SpeakerSpeakView.as_view(),
         name='agenda_speaker_speak',
+    ),
+
+    url(r'^(?P<pk>\d+)/speaker/change_order$',
+        SpeakerChangeOrderView.as_view(),
+        name='agenda_speaker_change_order',
     ),
 )

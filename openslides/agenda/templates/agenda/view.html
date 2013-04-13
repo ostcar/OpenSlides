@@ -2,8 +2,16 @@
 
 {% load i18n %}
 {% load tags %}
+{% load staticfiles %}
 
 {% block title %}{{ block.super }} – {{ item.title }}{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    {% comment %} TODO: import the sortable-plugin in our custom jquery-file {% endcomment %}
+    <script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+    <script src="{% static 'javascript/agenda.js' %}"></script>
+{% endblock %}
 
 {% block content %}
 <h1>
@@ -52,15 +60,14 @@
 <p><a href="{% url 'projector_activate_slide' item.sid 'show_list_of_speakers' %}">Show list of speakers</a></p>
 
 {% if old_speakers %}
-<div id="show_old_speakers" style="display:none">
+<div id="show_old_speakers" style="display:none" class="toggle_old_speakers">
     <a href="#">{% trans "Show old speakers" %}</a>
     {% if last_speaker %}
         <p>{% trans "Last speaker:" %} <a href="{% model_url last_speaker %}">{{ last_speaker }}</a></p>
     {% endif %}
 </div>
 
-<div id="old_speakers">
-    <p>TODO: add JS</p>
+<div id="old_speakers" class="toggle_old_speakers">
     <a href="#">{% trans "Hide old speakers" %}</a>
     <ol>
         {% for speaker in old_speakers %}
@@ -76,10 +83,22 @@
 </div>
 {% endif %}
 
+{% if perms.agenda.can_manage_agenda %}
+    <form id="speaker_list_changed_form" action="{% url 'agenda_speaker_change_order' item.pk %}" method="post" style="display:none" class="alert alert-warning">{% csrf_token %}
+       <button type="button" class="close" data-dismiss="alert">×</button>
+       <p>{% trans "Do you want to save the changed order of speakers?" %}</p>
+       <input id="sort_order" name="sort_order" type="hidden"></hidden>
+       <p>
+           <button class="btn" type="submit">{% trans 'Yes' %}</button>
+           <a href="{% url 'item_view' item.pk %}" class="btn">{% trans 'No' %}</a>
+        </p>
+    </form>
+{% endif %}
+
 {% if speakers %}
-    <ol>
+    <ol {% if perms.agenda.can_manage_agenda %}id="list_of_speakers"{% endif %}>
         {% for speaker in speakers %}
-            <li>
+            <li id="speaker_{{ speaker.pk }}">
                 <a href="{% model_url speaker %}">{{ speaker }}</a>
                 <a href="{% url 'agenda_speaker_speak' item.pk speaker.person.person_id %}">speak</a>
                 <a href="{% model_url speaker 'delete' %}" title="{% trans 'Delete' %}" class="btn btn-mini">
@@ -91,6 +110,8 @@
 {% else %}
     <p>{% trans 'The list of speakers is empty' %}</p>
 {% endif %}
+
+
 
 {% if is_speaker %}
     <a href="{% url 'agenda_speaker_delete' object.id %}">{% trans "Remove me vom speakers list." %}</a>

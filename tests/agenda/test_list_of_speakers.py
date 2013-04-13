@@ -31,7 +31,6 @@ class ListOfSpeakerModelTests(TestCase):
         speaker1_item2 = Speaker.objects.add(self.speaker1, self.item2)
         self.assertTrue(Speaker.objects.filter(person=self.speaker1, item=self.item2).exists())
 
-
         # Append speaker2 to the list of item1
         speaker2_item1 = Speaker.objects.add(self.speaker2, self.item1)
         self.assertTrue(Speaker.objects.filter(person=self.speaker2, item=self.item1).exists())
@@ -174,5 +173,3 @@ class SpeakerListOpenView(SpeakerViewTestCase):
         response = self.check_url('/agenda/1/speaker/open/', self.admin_client, 302)
         item = Item.objects.get(pk=self.item1.pk)
         self.assertFalse(item.speaker_list_closed)
-
-

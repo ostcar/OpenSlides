@@ -340,10 +340,10 @@ class SpeakerSpeakView(SingleObjectMixin, RedirectView):
             speaker = Speaker.objects.filter(
                 person=kwargs['person_id'],
                 item=self.object.pk).exclude(
-                weight=None).get()
+                    weight=None).get()
         except Speaker.DoesNotExist:
             messages.error(self.request, _('Person %s is not on the list of item %s.'
-                                            % (kwargs['person_id'], self.object)))
+                                           % (kwargs['person_id'], self.object)))
         else:
             speaker.speak()
 
@@ -364,6 +364,48 @@ class SpeakerListOpenView(SingleObjectMixin, RedirectView):
         self.object = self.get_object()
         self.object.speaker_list_closed = not self.open_list
         self.object.save()
+
+    def get_url_name_args(self):
+        return [self.object.pk]
+
+
+class SpeakerChangeOrderView(SingleObjectMixin, RedirectView):
+    """
+    Change the order of the speakers.
+
+    Has to be called as post-request with the new order of the speaker ids.
+    """
+    permission_required = 'agenda.can_manage_agenda'
+    model = Item
+    url_name = 'item_view'
+
+    def pre_redirect(self, args, **kwargs):
+        self.object = self.get_object()
+
+    @transaction.commit_manually
+    def pre_post_redirect(self, request, *args, **kwargs):
+        """
+        Reorder the list of speaker.
+
+        Take the string 'sort_order' from the post-data, and use this order.
+        """
+        self.object = self.get_object()
+        transaction.commit()
+        for (counter, speaker) in enumerate(self.request.POST['sort_order'].split(',')):
+            try:
+                speaker_pk = int(speaker.split('_')[1])
+            except IndexError:
+                transaction.rollback()
+                break
+            try:
+                speaker = Speaker.objects.filter(item=self.object).get(pk=speaker_pk)
+            except:
+                transaction.rollback()
+                break
+            speaker.weight = counter + 1
+            speaker.save()
+        else:
+            transaction.commit()
 
     def get_url_name_args(self):
         return [self.object.pk]
