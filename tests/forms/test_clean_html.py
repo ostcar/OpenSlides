@@ -7,12 +7,11 @@
     :license: GNU GPL, see LICENSE for more details.
 """
 
-from django.test import TestCase
 from django import forms
 from django.db import models
 
+from openslides.utils.test import TestCase
 from openslides.utils.forms import CleanHtmlFormMixin
-from openslides.motion.models import Motion
 
 
 class HtmlTestForm(CleanHtmlFormMixin, forms.Form):
@@ -20,9 +19,9 @@ class HtmlTestForm(CleanHtmlFormMixin, forms.Form):
     text2 = forms.CharField()
 
     def get_clean_html_fields(self):
-        '''
+        """
         The field 'text' contains HTML, clean it
-        '''
+        """
         return ('text', )
 
 
@@ -45,9 +44,9 @@ class CleanHtmlTest(TestCase):
         self.assertEqual(form.cleaned_data['text2'], dirty)
 
     def test_clean_html(self):
-        '''
+        """
         Test that the correct HTML tags and attributes are removed
-        '''
+        """
 
         # Forbidden tags and attributes
         self.clean_html('<script>do_evil();</script>', 'do_evil();')
