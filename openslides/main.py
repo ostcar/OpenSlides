@@ -179,11 +179,9 @@ def _main(opts, database_path=None):
     # Find url to openslides
     addr, port = detect_listen_opts(opts.address, opts.port)
 
-
     # Create Database if necessary
     if not database_exists() or opts.syncdb:
         run_syncdb()
-        ## set_system_url(url)
         create_or_reset_admin_user()
 
     # Reset Admin
@@ -294,15 +292,6 @@ def run_syncdb():
     # now initialize the database
     argv = ["", "syncdb", "--noinput"]
     execute_from_command_line(argv)
-
-
-def set_system_url(url):
-    # can't be imported in global scope as it already requires
-    # the settings module during import
-    from openslides.config.api import config
-
-    if config['participant_pdf_system_url'] == 'http://example.com:8000':
-        config['participant_pdf_system_url'] = url
 
 
 def create_or_reset_admin_user():
