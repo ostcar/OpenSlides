@@ -178,15 +178,12 @@ def _main(opts, database_path=None):
 
     # Find url to openslides
     addr, port = detect_listen_opts(opts.address, opts.port)
-    if port == 80:
-        url = "http://%s" % addr
-    else:
-        url = "http://%s:%d" % (addr, port)
+
 
     # Create Database if necessary
     if not database_exists() or opts.syncdb:
         run_syncdb()
-        set_system_url(url)
+        ## set_system_url(url)
         create_or_reset_admin_user()
 
     # Reset Admin
@@ -205,7 +202,11 @@ def _main(opts, database_path=None):
         reload = False
 
     if opts.start_browser:
-        start_browser(url)
+        if port == 80:
+            suffix = ""
+        else:
+            suffix = ":%d" % port
+        start_browser("http://localhost%s" % suffix)
 
     # Start the server
     run_tornado(addr, port, reload)
