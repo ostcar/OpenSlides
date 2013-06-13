@@ -252,10 +252,7 @@ def setup_django_environment(settings_path):
 
 def detect_listen_opts(address=None, port=None):
     if address is None:
-        try:
-            address = socket.gethostbyname(socket.gethostname())
-        except socket.error:
-            address = "127.0.0.1"
+        address = "0.0.0.0"
 
     if port is None:
         # test if we can use port 80
