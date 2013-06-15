@@ -132,7 +132,7 @@ class Motion(SlideMixin, models.Model):
 
         # Solves the problem, that there can only be one motion with an empty
         # string as identifier.
-        if self.identifier is '':
+        if not self.identifier and isinstance(self.identifier, basestring):
             self.identifier = None
 
         super(Motion, self).save(*args, **kwargs)
