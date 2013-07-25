@@ -35,6 +35,7 @@ from openslides.projector.projector import Widget, SLIDE
 from openslides.config.api import config
 from openslides.agenda.models import Item
 
+from .exceptions import MotionError
 from .models import (Motion, MotionSubmitter, MotionSupporter, MotionPoll,
                      MotionVersion, State, WorkflowError, Category)
 from .forms import (BaseMotionForm, MotionSubmitterMixin, MotionSupporterMixin,
@@ -303,9 +304,11 @@ class VersionDeleteView(DeleteView):
     success_url_name = 'motion_detail'
 
     def get_object(self):
-        motion_id = int(self.kwargs.get('pk'))
+        motion = Motion.objects.get(pk=int(self.kwargs.get('pk')))
         version_number = int(self.kwargs.get('version_number'))
-        return MotionVersion.objects.get(motion=motion_id,
+        if version_number == motion.active_version.version_number:
+            raise MotionError('You can not delete the active version of a motion.')
+        return MotionVersion.objects.get(motion=motion,
                                          version_number=version_number)
 
     def get_success_url_name_args(self):

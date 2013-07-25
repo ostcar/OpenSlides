@@ -14,6 +14,7 @@ from openslides.config.api import config
 from openslides.utils.test import TestCase
 from openslides.participant.models import User, Group
 from openslides.motion.models import Motion, State, Category, MotionLog
+from openslides.motion.exceptions import MotionError
 
 
 class MotionViewTestCase(TestCase):
@@ -412,6 +413,7 @@ class TestVersionPermitView(MotionViewTestCase):
 
 class TestVersionDeleteView(MotionViewTestCase):
     def test_get(self):
+        self.motion1.save(use_version=self.motion1.get_new_version(title='new', text='new'))
         response = self.check_url('/motion/1/version/1/del/', self.admin_client, 302)
         self.assertRedirects(response, '/motion/1/version/1/')
 
@@ -424,3 +426,13 @@ class TestVersionDeleteView(MotionViewTestCase):
         response = self.admin_client.post('/motion/1/version/2/del/', {'yes': 1})
         self.assertRedirects(response, '/motion/1/')
         self.assertEqual(self.motion1.versions.count(), 2)
+
+    def test_delete_active_version(self):
+        self.motion1.save(use_version=self.motion1.get_new_version(title='new_title_yae6Aequaiw5saeb8suG', text='new'))
+        motion = Motion.objects.all()[0]
+        self.assertEqual(motion.get_active_version().title, 'new_title_yae6Aequaiw5saeb8suG')
+        self.assertRaisesMessage(
+            MotionError,
+            'You can not delete the active version of a motion.',
+            self.admin_client.post,
+            '/motion/1/version/2/del/', {'yes': 1})
