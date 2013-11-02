@@ -323,5 +323,5 @@ VII. License and authors
 ========================
 
 OpenSlides is Free/Libre Open Source Software (FLOSS), and distributed
-under the GNU General Public License (GNU GPL) Version 2+, see LICENSE
-file. The authors of OpenSlides are mentioned in the AUTHORS file.
+under the MIT License, see LICENSE file. The authors of OpenSlides are
+mentioned in the AUTHORS file.
