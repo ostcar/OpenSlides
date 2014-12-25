@@ -2,52 +2,57 @@
 
 from django.conf.urls import patterns, url
 
+from . import views
+
 # TODO: define the Views inhere
 urlpatterns = patterns(
     'openslides.motion.views',
     url(r'^$',
-        'motion_list',
+        views.MotionListView.as_view(),
         name='motion_list'),
 
     url(r'^new/$',
-        'motion_create',
-        # TODO: rename to motion_create
-        name='motion_new'),
+        views.MotionCreateView.as_view(),
+        name='motion_create'),
 
     url(r'^(?P<pk>\d+)/$',
-        'motion_detail',
+        views.MotionDetailView.as_view(),
         name='motion_detail'),
 
     url(r'^(?P<pk>\d+)/edit/$',
-        'motion_update',
+        views.MotionUpdateView.as_view(),
         name='motion_update'),
 
     url(r'^(?P<pk>\d+)/del/$',
-        'motion_delete',
+        views.MotionDeleteView.as_view(),
         name='motion_delete'),
 
+    url(r'^(?P<pk>\d+)/new_amendment/$',
+        views.MotionCreateAmendmentView.as_view(),
+        name='motion_create_amendment'),
+
     url(r'^(?P<pk>\d+)/version/(?P<version_number>\d+)/$',
-        'motion_detail',
+        views.MotionDetailView.as_view(),
         name='motion_version_detail'),
 
     url(r'^(?P<pk>\d+)/version/(?P<version_number>\d+)/permit/$',
-        'version_permit',
+        views.VersionPermitView.as_view(),
         name='motion_version_permit'),
 
     url(r'^(?P<pk>\d+)/version/(?P<version_number>\d+)/del/$',
-        'version_delete',
+        views.VersionDeleteView.as_view(),
         name='motion_version_delete'),
 
     url(r'^(?P<pk>\d+)/diff/$',
-        'version_diff',
+        views.VersionDiffView.as_view(),
         name='motion_version_diff'),
 
     url(r'^(?P<pk>\d+)/support/$',
-        'motion_support',
+        views.SupportView.as_view(support=True),
         name='motion_support'),
 
     url(r'^(?P<pk>\d+)/unsupport/$',
-        'motion_unsupport',
+        views.SupportView.as_view(support=False),
         name='motion_unsupport'),
 
     url(r'^(?P<pk>\d+)/create_poll/$',

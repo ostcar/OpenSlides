@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Max
 from django.utils import formats
 from django.utils.translation import ugettext as _
-from django.utils.translation import ugettext_lazy, ugettext_noop
+from django.utils.translation import ugettext_lazy, ugettext_noop, pgettext
 
 from openslides.config.api import config
 from openslides.mediafile.models import Mediafile
@@ -71,8 +71,12 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
     Many to many relation to mediafile objects.
     """
 
-    # TODO: proposal
-    # master = models.ForeignKey('self', null=True, blank=True)
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='amendments')
+    """
+    Field for amendments to reference to the motion that should be altered.
+
+    null if the motion is not an amendment.
+    """
 
     class Meta:
         permissions = (
@@ -206,19 +210,30 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
 
     def set_identifier(self):
         """
-        Sets the motion identifier automaticly according to the config
-        value if it is not set yet.
+        Sets the motion identifier automaticly according to the config value if
+        it is not set yet.
         """
+        # The identifier is already set or should be set manually
         if config['motion_identifier'] == 'manually' or self.identifier:
             # Do not set an identifier.
             return
+
+        # The motion is an amendment
+        elif self.is_amendment():
+            motions = self.parent.amendments.all()
+
+        # The motions should be counted per category
         elif config['motion_identifier'] == 'per_category':
             motions = Motion.objects.filter(category=self.category)
-        else:  # That means: config['motion_identifier'] == 'serially_numbered'
+
+        # The motions should be counted over all.
+        else:
             motions = Motion.objects.all()
 
         number = motions.aggregate(Max('identifier_number'))['identifier_number__max'] or 0
-        if self.category is None or not self.category.prefix:
+        if self.is_amendment():
+            prefix = '%s %s ' % (self.parent.identifier, pgettext('Prefix for amendment motions', 'A'))
+        elif self.category is None or not self.category.prefix:
             prefix = ''
         else:
             prefix = '%s ' % self.category.prefix
@@ -518,6 +533,9 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
         """
         MotionLog.objects.create(motion=self, message_list=message_list, person=person)
 
+    def is_amendment(self):
+        return self.parent is not None
+
 
 class MotionVersion(AbsoluteUrlMixin, models.Model):
     """
@@ -803,10 +821,12 @@ class State(models.Model):
     """If true, new versions are not automaticly set active."""
 
     dont_set_identifier = models.BooleanField(default=False)
-    """Decides if the motion gets an identifier.
+    """
+    Decides if the motion gets an identifier.
 
     If true, the motion does not get an identifier if the state change to
-    this one, else it does."""
+    this one, else it does.
+    """
 
     def __unicode__(self):
         """Returns the name of the state."""

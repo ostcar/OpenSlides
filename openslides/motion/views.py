@@ -35,8 +35,6 @@ class MotionListView(ListView):
     required_permission = 'motion.can_see_motion'
     model = Motion
 
-motion_list = MotionListView.as_view()
-
 
 class MotionDetailView(DetailView):
     """
@@ -68,8 +66,6 @@ class MotionDetailView(DetailView):
             'text': version.text,
             'reason': version.reason})
         return super(MotionDetailView, self).get_context_data(**kwargs)
-
-motion_detail = MotionDetailView.as_view()
 
 
 class MotionEditMixin(object):
@@ -178,17 +174,26 @@ class MotionCreateView(MotionEditMixin, CreateView):
 
     def form_valid(self, form):
         """
-        Write a log message if the form is valid.
+        Write a log message and set the submitter if necessary.
         """
+        # First, do the job
         response = super(MotionCreateView, self).form_valid(form)
+
+        # Write the log message
         self.object.write_log([ugettext_noop('Motion created')], self.request.user)
+
+        # Set submitter to request.user, if no submitter is set jet
         if ('submitter' not in form.cleaned_data or
                 not form.cleaned_data['submitter']):
             self.object.add_submitter(self.request.user)
         return response
 
     def get_initial(self):
+        """
+        Sets the initial data for the MotionCreateForm.
+        """
         initial = super(MotionCreateView, self).get_initial()
+        initial['text'] = config['motion_preamble']
         if self.request.user.has_perm('motion.can_manage_motion'):
             initial['workflow'] = config['motion_workflow']
         return initial
@@ -202,7 +207,47 @@ class MotionCreateView(MotionEditMixin, CreateView):
         self.object.reset_state(workflow)
         self.version = self.object.get_new_version()
 
-motion_create = MotionCreateView.as_view()
+
+class MotionCreateAmendmentView(MotionCreateView):
+    """
+    Create a amendment-motion.
+    """
+
+    def get_parent_motion(self):
+        """
+        Gets the parent motion from the url.
+
+        Caches the value.
+        """
+        try:
+            parent = self._object_parent
+        except AttributeError:
+            # self.get_object() is the django method, which does not cache the
+            # object. For now this is not a problem, because get_object() is only
+            # called ones.
+            parent = self._object_parent = self.get_object()
+        return parent
+
+    def manipulate_object(self, form):
+        """
+        Sets the parent to the motion to which this amendment refers.
+        """
+        self.object.parent = self.get_parent_motion()
+        super(MotionCreateAmendmentView, self).manipulate_object(form)
+
+    def get_initial(self):
+        """
+        Sets the initial values to the form.
+
+        This are the values for title, text and reason which are set to the
+        values from the parent motion.
+        """
+        initial = super(MotionCreateAmendmentView, self).get_initial()
+        parent = self.get_parent_motion()
+        initial['title'] = parent.title
+        initial['text'] = parent.text
+        initial['reason'] = parent.reason
+        return initial
 
 
 class MotionUpdateView(MotionEditMixin, UpdateView):
@@ -270,8 +315,6 @@ class MotionUpdateView(MotionEditMixin, UpdateView):
             self.version = self.object.get_last_version()
             self.used_new_version = False
 
-motion_update = MotionUpdateView.as_view()
-
 
 class MotionDeleteView(DeleteView):
     """
@@ -288,8 +331,6 @@ class MotionDeleteView(DeleteView):
 
     def get_final_message(self):
         return _('%s was successfully deleted.') % _('Motion')
-
-motion_delete = MotionDeleteView.as_view()
 
 
 class VersionDeleteView(DeleteView):
@@ -321,8 +362,6 @@ class VersionDeleteView(DeleteView):
 
     def get_url_name_args(self):
         return (self.get_object().motion_id, )
-
-version_delete = VersionDeleteView.as_view()
 
 
 class VersionPermitView(SingleObjectMixin, QuestionView):
@@ -369,8 +408,6 @@ class VersionPermitView(SingleObjectMixin, QuestionView):
                           ugettext_noop('permitted')],
             person=self.request.user)
 
-version_permit = VersionPermitView.as_view()
-
 
 class VersionDiffView(DetailView):
     """
@@ -405,8 +442,6 @@ class VersionDiffView(DetailView):
             'diff_reason': diff_reason,
         })
         return context
-
-version_diff = VersionDiffView.as_view()
 
 
 class SupportView(SingleObjectMixin, QuestionView):
@@ -469,9 +504,6 @@ class SupportView(SingleObjectMixin, QuestionView):
             return _("You have supported this motion successfully.")
         else:
             return _("You have unsupported this motion successfully.")
-
-motion_support = SupportView.as_view(support=True)
-motion_unsupport = SupportView.as_view(support=False)
 
 
 class PollCreateView(SingleObjectMixin, RedirectView):

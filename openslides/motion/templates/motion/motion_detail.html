@@ -29,6 +29,9 @@
                 </span>
             {% endif %}
         {% endif %}
+        {% if motion.is_amendment %}
+            <a href="{{ motion.parent|absolute_url }}">Amendment</a>
+        {% endif %}
     </small>
     <small class="pull-right">
         <a href="{% url 'motion_list' %}" class="btn btn-mini">
@@ -67,7 +70,7 @@
         {% endif %}
     </small>
 </h1>
-
+<a href="{% url 'motion_create_amendment' motion.pk %}">Create amendment</a>
 <div class="row-fluid">
 <div class="span8">
     {# TODO: show only for workflow with versioning #}
@@ -322,6 +325,16 @@
     </a>
     </div> <!--/well-->
     {% endif %}
+
+    {% with amendments=motion.amendments.all %}
+    {% if amendments %}
+      <div class="well">
+        <h4>Amendments</h4>
+        <ul>{% for amendment in amendments %}
+          <li><a href="{{ amendment|absolute_url }}">{{ amendment }}</a></li>
+        {% endfor %}</ul>
+    {% endif %}
+    {% endwith %}
   </div> <!--/span-->
 </div> <!--/row-->
 
