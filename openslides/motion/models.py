@@ -75,7 +75,7 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
     """
     Field for amendments to reference to the motion that should be altered.
 
-    null if the motion is not an amendment.
+    Null if the motion is not an amendment.
     """
 
     class Meta:
