@@ -182,7 +182,7 @@ class MotionCreateView(MotionEditMixin, CreateView):
         # Write the log message
         self.object.write_log([ugettext_noop('Motion created')], self.request.user)
 
-        # Set submitter to request.user, if no submitter is set yet
+        # Set submitter to request.user if no submitter is set yet
         if ('submitter' not in form.cleaned_data or
                 not form.cleaned_data['submitter']):
             self.object.add_submitter(self.request.user)
