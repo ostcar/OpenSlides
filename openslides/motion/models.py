@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Max
 from django.utils import formats
 from django.utils.translation import ugettext as _
-from django.utils.translation import ugettext_lazy, ugettext_noop, pgettext
+from django.utils.translation import ugettext_lazy, ugettext_noop
 
 from openslides.config.api import config
 from openslides.mediafile.models import Mediafile
@@ -219,7 +219,7 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
             return
 
         # The motion is an amendment
-        elif self.is_amendment():
+        elif self.is_amendment() and config['motion_amendments_enabled']:
             motions = self.parent.amendments.all()
 
         # The motions should be counted per category
@@ -231,8 +231,8 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
             motions = Motion.objects.all()
 
         number = motions.aggregate(Max('identifier_number'))['identifier_number__max'] or 0
-        if self.is_amendment():
-            prefix = '%s %s ' % (self.parent.identifier, pgettext('Prefix for amendment motions', 'A'))
+        if self.is_amendment() and config['motion_amendments_enabled']:
+            prefix = '%s %s ' % (self.parent.identifier, config['motion_amendments_prefix'])
         elif self.category is None or not self.category.prefix:
             prefix = ''
         else:

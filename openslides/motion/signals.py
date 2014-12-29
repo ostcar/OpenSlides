@@ -3,7 +3,7 @@
 from django import forms
 from django.dispatch import receiver
 from django.utils.translation import ugettext as _
-from django.utils.translation import ugettext_lazy, ugettext_noop
+from django.utils.translation import ugettext_lazy, ugettext_noop, pgettext
 
 from openslides.config.api import ConfigGroup, ConfigGroupedCollection, ConfigVariable
 from openslides.config.signals import config_signal
@@ -144,11 +144,31 @@ def setup_motion_config(sender, **kwargs):
         title=ugettext_lazy('PDF'),
         variables=(motion_pdf_title, motion_pdf_preamble, motion_pdf_paragraph_numbering))
 
+    # Amendments
+    motion_amendments_enabled = ConfigVariable(
+        name='motion_amendments_enabled',
+        default_value=False,
+        form_field=forms.BooleanField(
+            label=ugettext_lazy('Activate amendments'),
+            required=False))
+
+    motion_amendments_prefix = ConfigVariable(
+        name='motion_amendments_prefix',
+        default_value=pgettext('Prefix for amendment', 'A'),
+        form_field=forms.CharField(
+            required=False,
+            label=ugettext_lazy('Prefix for the identifier for amendments')))
+
+    group_amendments = ConfigGroup(
+        title=ugettext_lazy('Amendments'),
+        variables=(motion_amendments_enabled, motion_amendments_prefix))
+
     return ConfigGroupedCollection(
         title=ugettext_noop('Motion'),
         url='motion',
         weight=30,
-        groups=(group_general, group_supporters, group_ballot_papers, group_pdf))
+        groups=(group_general, group_supporters, group_amendments,
+                group_ballot_papers, group_pdf))
 
 
 @receiver(post_database_setup, dispatch_uid='motion_create_builtin_workflows')
