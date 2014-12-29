@@ -2,7 +2,6 @@
 
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponseRedirect
 from django.utils.text import slugify
 from django.utils.translation import ugettext as _
@@ -211,12 +210,12 @@ class MotionCreateView(MotionEditMixin, CreateView):
 
 class MotionCreateAmendmentView(MotionCreateView):
     """
-    Create a amendment-motion.
+    Create an amendment.
     """
 
     def dispatch(self, *args, **kwargs):
         if not config['motion_amendments_enabled']:
-            raise PermissionDenied()
+            raise Http404('Amendments are disabled in the config.')
         return super(MotionCreateAmendmentView, self).dispatch(*args, **kwargs)
 
     def get_parent_motion(self):

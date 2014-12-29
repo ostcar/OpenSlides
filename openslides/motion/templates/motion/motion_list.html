@@ -66,8 +66,10 @@
             <td class="nobr">{{ motion.identifier|default:'' }}</td>
             <td>
                 <a href="{{ motion|absolute_url }}">{{ motion.title }}</a>
-                {% if motion.is_amendment and 'motion_amendments_enabled'|get_config %}
-                    <span class="label label-success" data-original-title="Amendment" rel="tooltip">{{ 'motion_amendments_prefix'|get_config }}</span>
+                {% if motion.is_amendment %}
+                    <span class="label label-success" data-original-title="Amendment" rel="tooltip">
+                        {{ 'motion_amendments_prefix'|get_config }}
+                    </span>
                 {% endif %}
             </td>
             <td class="optional">{% if motion.category %}{{ motion.category }}{% else %}–{% endif %}</td>

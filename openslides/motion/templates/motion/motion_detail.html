@@ -305,15 +305,17 @@
             <small>* {% trans "minimum required supporters" %}: {{ 'motion_min_supporters'|get_config }}</small>
         {% endif %}
         {% if 'motion_amendments_enabled'|get_config %}
-            <h5>{% trans 'Amendments' %}</h5>
+            <h5>{% trans 'Amendments' %}:</h5>
             {% with amendments=motion.amendments.all %}
                 {% if amendments %}
-                    <ul>{% for amendment in amendments %}
-                      <li><a href="{{ amendment|absolute_url }}">{{ amendment }}</a></li>
-                    {% endfor %}</ul>
+                    <ul>
+                        {% for amendment in amendments %}
+                            <li><a href="{{ amendment|absolute_url }}">{{ amendment }}</a></li>
+                        {% endfor %}
+                    </ul>
                 {% endif %}
             {% endwith %}
-            <a class="btn btn-mini activate_link" href="{% url 'motion_create_amendment' motion.pk %}">Create amendment</a>
+            <a class="btn btn-mini" href="{% url 'motion_create_amendment' motion.pk %}">Create amendment</a>
         {% endif %}
 
     </div> <!--/well-->

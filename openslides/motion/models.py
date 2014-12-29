@@ -219,7 +219,7 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
             return
 
         # The motion is an amendment
-        elif self.is_amendment() and config['motion_amendments_enabled']:
+        elif self.is_amendment():
             motions = self.parent.amendments.all()
 
         # The motions should be counted per category
@@ -231,7 +231,7 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
             motions = Motion.objects.all()
 
         number = motions.aggregate(Max('identifier_number'))['identifier_number__max'] or 0
-        if self.is_amendment() and config['motion_amendments_enabled']:
+        if self.is_amendment():
             prefix = '%s %s ' % (self.parent.identifier, config['motion_amendments_prefix'])
         elif self.category is None or not self.category.prefix:
             prefix = ''
@@ -534,7 +534,13 @@ class Motion(SlideMixin, AbsoluteUrlMixin, models.Model):
         MotionLog.objects.create(motion=self, message_list=message_list, person=person)
 
     def is_amendment(self):
-        return self.parent is not None
+        """
+        Returns True if the motion is an amendment.
+
+        A motion is a amendment if amendments are activated in the config and
+        the motion has a parent.
+        """
+        return config['motion_amendments_enabled'] and self.parent is not None
 
 
 class MotionVersion(AbsoluteUrlMixin, models.Model):
