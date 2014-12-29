@@ -30,7 +30,11 @@
             {% endif %}
         {% endif %}
         {% if motion.is_amendment %}
-            (Amendment of <a href="{{ motion.parent|absolute_url }}">{{ motion.parent }}</a>)
+            {% if motion.parent.identifier %}
+                (Amendment of <a href="{{ motion.parent|absolute_url }}">{{ motion.parent.identifier }}</a>)
+            {% else %}
+                (Amendment of <a href="{{ motion.parent|absolute_url }}">{{ motion.parent }}</a>)
+            {% endif %}
         {% endif %}
     </small>
     <small class="pull-right">
@@ -299,23 +303,27 @@
             {% endif %}
         {% endif %}
 
-        <!-- Footnote: requried supporters -->
-        {% if 'motion_min_supporters'|get_config > 0 %}
-            <br><br>
-            <small>* {% trans "minimum required supporters" %}: {{ 'motion_min_supporters'|get_config }}</small>
-        {% endif %}
+        <!-- Amendments -->
         {% if 'motion_amendments_enabled'|get_config %}
-            <h5>{% trans 'Amendments' %}:</h5>
             {% with amendments=motion.amendments.all %}
                 {% if amendments %}
+                    <h5>{% trans 'Amendments' %}:</h5>
                     <ul>
                         {% for amendment in amendments %}
                             <li><a href="{{ amendment|absolute_url }}">{{ amendment }}</a></li>
                         {% endfor %}
                     </ul>
+                {% else %}
+                    <br><br>
                 {% endif %}
             {% endwith %}
-            <a class="btn btn-mini" href="{% url 'motion_create_amendment' motion.pk %}">Create amendment</a>
+            <a class="btn" href="{% url 'motion_create_amendment' motion.pk %}">New amendment</a>
+        {% endif %}
+
+        <!-- Footnote: requried supporters -->
+        {% if 'motion_min_supporters'|get_config > 0 %}
+            <br><br>
+            <small>* {% trans "minimum required supporters" %}: {{ 'motion_min_supporters'|get_config }}</small>
         {% endif %}
 
     </div> <!--/well-->
