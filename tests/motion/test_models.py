@@ -180,6 +180,7 @@ class ModelTest(TestCase):
         If the motion is an amendment, the identifier is the identifier from the
         parent + a suffix.
         """
+        config['motion_amendments_enabled'] = True
         self.motion.identifier = 'Parent identifier'
         self.motion.save()
         motion = Motion(parent=self.motion)
@@ -193,6 +194,7 @@ class ModelTest(TestCase):
         If a motion has already an amendment, the second motion gets another
         identifier.
         """
+        config['motion_amendments_enabled'] = True
         self.motion.identifier = 'Parent identifier'
         self.motion.save()
         Motion.objects.create(title='Amendment1', parent=self.motion)

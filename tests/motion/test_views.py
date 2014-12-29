@@ -199,8 +199,13 @@ class TestMotionCreateView(MotionViewTestCase):
 class TestMotionCreateAmendmentView(MotionViewTestCase):
     url = '/motion/1/new_amendment/'
 
-    def test_get(self):
+    def test_get_amendment_active(self):
+        config['motion_amendments_enabled'] = True
         self.check_url(self.url, self.admin_client, 200)
+
+    def test_get_amendment_inactive(self):
+        config['motion_amendments_enabled'] = False
+        self.check_url(self.url, self.admin_client, 403)
 
     def test_get_parent_motion(self):
         motion = Motion.objects.create(title='Test Motion')
