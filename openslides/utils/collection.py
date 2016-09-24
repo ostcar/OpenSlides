@@ -4,7 +4,7 @@ from django.core.cache import cache, caches
 
 class CollectionElement:
     @classmethod
-    def from_instance(cls, instance, deleted=False):
+    def from_instance(cls, instance, deleted=False, information=None):
         """
         Returns a collection element from a database instance.
 
@@ -12,10 +12,10 @@ class CollectionElement:
 
         If deleted is set to True, the element is deleted from the cache.
         """
-        return cls(instance=instance, deleted=deleted)
+        return cls(instance=instance, deleted=deleted, information=information)
 
     @classmethod
-    def from_values(cls, collection_string, id, deleted=False, full_data=None):
+    def from_values(cls, collection_string, id, deleted=False, full_data=None, information=None):
         """
         Returns a collection element from a collection_string and an id.
 
@@ -24,16 +24,18 @@ class CollectionElement:
         With the argument full_data, the content of the CollectionElement can be set.
         It has to be a dict in the format that is used be access_permission.get_full_data().
         """
-        return cls(collection_string=collection_string, id=id, deleted=deleted, full_data=full_data)
+        return cls(collection_string=collection_string, id=id, deleted=deleted,
+                   full_data=full_data, information=information)
 
     def __init__(self, instance=None, deleted=False, collection_string=None, id=None,
-                 full_data=None):
+                 full_data=None, information=None):
         """
         Do not use this. Use the methods from_instance() or from_values().
         """
         self.instance = instance
         self.deleted = deleted
         self.full_data = full_data
+        self.information = information
         if instance is not None:
             self.collection_string = instance.get_collection_string()
             self.id = instance.pk
@@ -59,10 +61,13 @@ class CollectionElement:
         Returns a dictonary that can be used to send the object through the
         channels system.
         """
-        return {
+        channel_message = {
             'collection_string': self.collection_string,
             'id': self.id,
             'deleted': self.is_deleted()}
+        if self.information is not None:
+            channel_message['information'] = self.information
+        return channel_message
 
     def as_autoupdate(self, method, *args):
         """

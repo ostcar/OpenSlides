@@ -23,14 +23,17 @@ def get_logged_in_users():
     return User.objects.exclude(session=None).filter(session__expire_date__gte=timezone.now()).distinct()
 
 
-def get_projector_element_data(projector):
+def get_projector_element_data(projector, on_slide=None):
     """
     Returns a list of dicts that are required for a specific projector.
 
     The argument projector has to be a projector instance.
+
+    If on_slide is a string that matches an slide on the projector, then only
+    elements on this slide are returned.
     """
     output = []
-    for requirement in projector.get_all_requirements():
+    for requirement in projector.get_all_requirements(on_slide):
         required_collection_element = CollectionElement.from_instance(requirement)
         output.append(required_collection_element.as_autoupdate_for_projector())
     return output
@@ -133,7 +136,10 @@ def send_data(message):
         if send_all is None:
             send_all = projector.need_full_update_for_this(collection_element)
         if send_all:
-            output = get_projector_element_data(projector)
+            # Via the information system it is possible to set the attribute
+            # on_slide which will update only elements on this specific slide.
+            on_slide = message.get('information', {}).get('on_slide', None)
+            output = get_projector_element_data(projector, on_slide)
         else:
             # The list will be filled in the next lines.
             output = []
@@ -144,7 +150,7 @@ def send_data(message):
                 {'text': json.dumps(output)})
 
 
-def inform_changed_data(instance, deleted=False):
+def inform_changed_data(instance, deleted=False, information=None):
     try:
         root_instance = instance.get_root_rest_element()
     except AttributeError:
@@ -153,7 +159,8 @@ def inform_changed_data(instance, deleted=False):
     else:
         collection_element = CollectionElement.from_instance(
             root_instance,
-            deleted=deleted and instance == root_instance)
+            deleted=deleted and instance == root_instance,
+            information=information)
 
         # If currently there is an open database transaction, then the following
         # function is only called, when the transaction is commited. If there
@@ -165,17 +172,3 @@ def inform_changed_data(instance, deleted=False):
                 pass
 
         transaction.on_commit(send_autoupdate)
-
-
-def inform_changed_data_receiver(sender, instance, **kwargs):
-    """
-    Receiver for the inform_changed_data function to use in a signal.
-    """
-    inform_changed_data(instance)
-
-
-def inform_deleted_data_receiver(sender, instance, **kwargs):
-    """
-    Receiver for the inform_changed_data function to use in a signal.
-    """
-    inform_changed_data(instance, deleted=True)
