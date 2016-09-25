@@ -125,21 +125,21 @@ class TestConfigDBQueries(TestCase):
         """
         Tests that only the following db queries are done:
         * 2 requests to get the session an the request user with its permissions and
-        * 56 requests to get the list of all config values
-
-        TODO: There should be only 2 requests to get all config elements
+        * 1 requests to get the list of all config values
         """
         self.client.force_login(User.objects.get(pk=1))
-        with self.assertNumQueries(58):
+        with self.assertNumQueries(3):
             self.client.get(reverse('config-list'))
 
     def test_anonymous(self):
         """
         Tests that only the following db queries are done:
-        * 2 requests to get the permission for anonymous (config and permissions)
-        * 112 requests to get the list of all projectors,
+        * 2 requests to get the permission for anonymous (config and permissions),
+        * 1 to get all config value and
 
-        TODO: There should be only 2 requests to get all config elements
+        * 55 requests to find out if anonymous is enabled.
+
+        TODO: The last 55 requests are a bug.
         """
-        with self.assertNumQueries(114):
+        with self.assertNumQueries(58):
             self.client.get(reverse('config-list'))

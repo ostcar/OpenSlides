@@ -80,7 +80,6 @@ class CollectionElement:
             'action': 'deleted' if self.is_deleted() else 'changed',
         }
         if not self.is_deleted():
-
             data = getattr(self.get_access_permissions(), method)(
                 self.get_full_data(),
                 *args)
@@ -262,20 +261,29 @@ class Collection:
                 full_data=cached_full_data)
 
         # Generate collection element that where not in the cache.
-        # If config elements are not in the cache, they have to be read from
-        # the config object.
-        from openslides.core.config import config
-        if self.collection_string == config.get_collection_string():
-            for key in missing_ids:
-                yield CollectionElement.from_values(config.get_collection_string(), key)
-        else:
-            model = self.get_model()
-            try:
-                query = model.objects.get_full_queryset()
-            except AttributeError:
-                query = model.objects
-            for instance in query.filter(pk__in=missing_ids):
-                yield CollectionElement.from_instance(instance)
+        if missing_ids:
+            from openslides.core.config import config
+            if self.collection_string == config.get_collection_string():
+                # If config elements are not in the cache, they have to be read from
+                # the config object.
+                for key, value in config.items():
+                    if key in missing_ids:
+                        collection_element = CollectionElement.from_values(
+                            config.get_collection_string(),
+                            key,
+                            full_data={'key': key, 'value': value})
+                        # We can not use .from_instance therefore the config value
+                        # is not saved to the cache. We have to do it manualy.
+                        collection_element.save_to_cache()
+                        yield collection_element
+            else:
+                model = self.get_model()
+                try:
+                    query = model.objects.get_full_queryset()
+                except AttributeError:
+                    query = model.objects
+                for instance in query.filter(pk__in=missing_ids):
+                    yield CollectionElement.from_instance(instance)
 
     def as_autoupdate_for_projector(self):
         """
