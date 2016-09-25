@@ -80,6 +80,10 @@ class RESTModelMixin:
         """
         # TODO: Fix circular imports
         from .autoupdate import inform_changed_data
+        # Django sets the pk of the instance to None after deleting it. But
+        # we need the pk to tell the autoupdate system which element was deleted.
+        instance_pk = self.pk
         return_value = super().delete(*args, **kwargs)
+        self.pk = instance_pk
         inform_changed_data(self, deleted=True, information=information)
         return return_value

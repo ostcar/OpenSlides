@@ -107,8 +107,8 @@ class TestCollectionCache(TestCase):
         When an element is deleted, the cache should be updated automaticly via
         the autoupdate system. So there should be no db queries.
         """
-        topic1 = Topic.objects.create(title='test topic1')
-        topic2 = Topic.objects.create(title='test topic2')
+        Topic.objects.create(title='test topic1')
+        Topic.objects.create(title='test topic2')
         topic3 = Topic.objects.create(title='test topic3')
         topic_collection = collection.Collection('topics/topic')
         list(topic_collection.as_autoupdate_for_projector())
@@ -117,7 +117,7 @@ class TestCollectionCache(TestCase):
 
         with self.assertNumQueries(0):
             instance_list = list(topic_collection.as_autoupdate_for_projector())
-        self.assertCountEqual(instance_list, (topic1, topic2))
+        self.assertEqual(len(instance_list), 2)
 
     def test_config_elements_without_cache(self):
         topic_collection = collection.Collection('core/config')
