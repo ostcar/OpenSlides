@@ -60,12 +60,12 @@ class ListOfSpeakersSlide(ProjectorElement):
                     # Yield last speakers
                     yield speaker.user
 
-    def get_collections_required_for_this(self, collection_element, config_entry, **information):
-        output = super().get_collections_required_for_this(collection_element, config_entry, **information)
+    def get_collection_elements_required_for_this(self, collection_element, config_entry):
+        output = super().get_collections_required_for_this(collection_element, config_entry)
         # Full update if item changes because then we may have new
         # candidates and therefor need new users.
-        if collection_element.collection_string == Item.get_collection_string() and collection_element.id == config_entry.get('id'):
-            output.extend(self.get_requirements_as_collections(config_entry))
+        if collection_element == CollectionElement.from_values(Item.get_collection_string(), config_entry.get('id')):
+            output.extend(self.get_requirements_as_collection_elements(config_entry))
         return output
 
 

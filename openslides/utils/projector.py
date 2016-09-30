@@ -74,14 +74,14 @@ class ProjectorElement(object, metaclass=SignalConnectMetaClass):
         """
         return ()
 
-    def get_requirements_as_collections(self, config_entry):
+    def get_requirements_as_collection_elements(self, config_entry):
         """
         Returns an iterable of collection elements that are required for this
         projector element. The config_entry has to be given.
         """
         return (CollectionElement.from_instance(instance) for instance in self.get_requirements(config_entry))
 
-    def get_collections_required_for_this(self, collection_element, config_entry, **information):
+    def get_collection_elements_required_for_this(self, collection_element, config_entry):
         """
         Returns a list of CollectionElements that have to be sent to every
         projector that shows this projector element according to the given
@@ -90,14 +90,15 @@ class ProjectorElement(object, metaclass=SignalConnectMetaClass):
         Default: Returns only the collection_element if it belongs to the
         requirements but return all requirements if the projector changes.
         """
-        for requirement in self.get_requirements_as_collections(config_entry):
-            if collection_element.collection_string == requirement.collection_string and collection_element.id == requirement.id:
+        requirements_as_collection_elements = list(self.get_requirements_as_collection_elements(config_entry))
+        for requirement in requirements_as_collection_elements:
+            if collection_element == requirement:
                 output = [collection_element]
                 break
         else:
-            if information.get('this_projector'):
+            if collection_element.information.get('this_projector'):
                 output = [collection_element]
-                output.extend(self.get_requirements_as_collections(config_entry))
+                output.extend(requirements_as_collection_elements)
             else:
                 output = []
         return output
