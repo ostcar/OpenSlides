@@ -94,8 +94,6 @@ class CollectionElement:
         """
         Returns a dict that can be sent through the autoupdate system for a site
         user.
-
-        Returns None if the user can not see the element.
         """
         return self.as_autoupdate(
             'get_restricted_data',
@@ -105,8 +103,6 @@ class CollectionElement:
         """
         Returns a dict that can be sent through the autoupdate system for the
         projector.
-
-        Returns None if the projector can not see the element.
         """
         return self.as_autoupdate(
             'get_projector_data')
@@ -292,6 +288,8 @@ class Collection:
         output = []
         for collection_element in self.element_generator():
             content = collection_element.as_autoupdate_for_projector()
+            # Content can not be None. If the projector can not see an element,
+            # then it is marked as deleted.
             output.append(content)
         return output
 

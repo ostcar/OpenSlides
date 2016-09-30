@@ -86,4 +86,5 @@ class RESTModelMixin:
         return_value = super().delete(*args, **kwargs)
         self.pk = instance_pk
         inform_changed_data(self, deleted=True, information=information)
+        self.pk = None
         return return_value
