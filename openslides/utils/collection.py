@@ -56,9 +56,15 @@ class CollectionElement:
             # then update the cache.
             self.save_to_cache()
 
-    def __eq__(self, element):
-        return (self.collection_string == element.collection_string and
-                self.id == element.id)
+    def __eq__(self, collection_element):
+        """
+        Compares two collection_elements.
+
+        Two collection elements are equal, if they have the same collection_string
+        and id.
+        """
+        return (self.collection_string == collection_element.collection_string and
+                self.id == collection_element.id)
 
     def as_channels_message(self):
         """
