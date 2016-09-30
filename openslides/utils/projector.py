@@ -1,5 +1,6 @@
 from django.dispatch import Signal
 
+from .collection import CollectionElement
 from .dispatch import SignalConnectMetaClass
 
 
@@ -73,11 +74,30 @@ class ProjectorElement(object, metaclass=SignalConnectMetaClass):
         """
         return ()
 
-    def need_full_update_for_this(self, collection_element):
+    def get_requirements_as_collections(self, config_entry):
         """
-        Returns True if this projector element needs to be updated with all
-        instances as defined in get_requirements(). The given
-        collection_element contains information about the changed instance.
-        Default is False.
+        Returns an iterable of collection elements that are required for this
+        projector element. The config_entry has to be given.
         """
-        return False
+        return (CollectionElement.from_instance(instance) for instance in self.get_requirements(config_entry))
+
+    def get_collections_required_for_this(self, collection_element, config_entry, **information):
+        """
+        Returns a list of CollectionElements that have to be sent to every
+        projector that shows this projector element according to the given
+        collection_element and information.
+
+        Default: Returns only the collection_element if it belongs to the
+        requirements but return all requirements if the projector changes.
+        """
+        for requirement in self.get_requirements_as_collections(config_entry):
+            if collection_element.collection_string == requirement.collection_string and collection_element.id == requirement.id:
+                output = [collection_element]
+                break
+        else:
+            if information.get('this_projector'):
+                output = [collection_element]
+                output.extend(self.get_requirements_as_collections(config_entry))
+            else:
+                output = []
+        return output
