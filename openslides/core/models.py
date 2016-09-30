@@ -108,7 +108,7 @@ class Projector(RESTModelMixin, models.Model):
                     result[key]['error'] = str(e)
         return result
 
-    def get_all_requirements(self, on_slide=None):
+    def get_all_requirements(self, on_slide=None):  #TODO: Refactor or rename this.
         """
         Generator which returns all instances that are shown on this projector.
         """
