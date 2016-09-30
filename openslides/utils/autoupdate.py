@@ -98,16 +98,15 @@ def send_data(message):
     # Loop over all logged in site users and the anonymous user and send changed data.
     for user in itertools.chain(get_logged_in_users(), [AnonymousUser()]):
         channel = Group('user-{}'.format(user.id))
-        output = collection_element.as_autoupdate_for_user(user)
-        channel.send({'text': json.dumps([output])})
+        output = [collection_element.as_autoupdate_for_user(user)]
+        channel.send({'text': json.dumps(output)})
 
     # Loop over all projectors and send data that they need.
     for projector in Projector.objects.all():
         if collection_element.is_deleted():
-            output = collection_element.as_autoupdate_for_projector()
+            output = [collection_element.as_autoupdate_for_projector()]
         else:
-            information = message.get('information', {})
-            collection_elements = projector.get_collections_required_for_this(collection_element, **information)
+            collection_elements = projector.get_collection_elements_required_for_this(collection_element)
             output = [collection_element.as_autoupdate_for_projector() for collection_element in collection_elements]
         if output:
             Group('projector-{}'.format(projector.pk)).send(

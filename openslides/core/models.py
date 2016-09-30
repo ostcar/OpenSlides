@@ -131,7 +131,7 @@ class Projector(RESTModelMixin, models.Model):
             if element is not None:
                 yield from element.get_requirements(value)
 
-    def get_collections_required_for_this(self, collection_element, **information):
+    def get_collection_elements_required_for_this(self, collection_element):
         """
         Returns an iterable of CollectionElements that have to be sent to this
         projector according to the given collection_element and information.
@@ -139,29 +139,23 @@ class Projector(RESTModelMixin, models.Model):
         from .config import config
 
         output = []
-        changed_fields = information.get('changed_fields', [])
+        changed_fields = collection_element.information.get('changed_fields', [])
         if (collection_element.collection_string == self.get_collection_string() and
                 changed_fields and
                 'config' not in changed_fields):
             # Projector model changed without changeing the projector config. So we just send this data.
-            output = collection_element
+            output.append(collection_element)
         else:
             # It is necessary to parse all active projector elements to check whether they require some data.
             this_projector = collection_element.collection_string == self.get_collection_string() and collection_element.id == self.pk
+            collection_element.information['this_projector'] = this_projector
             elements = {}
             for element in ProjectorElement.get_all():
                 elements[element.name] = element
             for key, value in self.config.items():
                 element = elements.get(value['name'])
                 if element is not None:
-                    output.extend(
-                        element.get_collections_required_for_this(
-                            collection_element,
-                            value,
-                            this_projector=this_projector,
-                            **information
-                        )
-                    )
+                    output.extend(element.get_collection_elements_required_for_this(collection_element, value))
             # If config changed, send also this to the projector.
             if collection_element.collection_string == config.get_collection_string():
                 output.append(collection_element)
