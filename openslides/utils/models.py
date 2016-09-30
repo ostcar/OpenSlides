@@ -69,7 +69,7 @@ class RESTModelMixin:
         # TODO: Fix circular imports
         from .autoupdate import inform_changed_data
         return_value = super().save(*args, **kwargs)
-        inform_changed_data(self, information=information)
+        inform_changed_data(self.get_root_rest_element(), information=information)
         return return_value
 
     def delete(self, skip_autoupdate=False, information=None, *args, **kwargs):
@@ -79,12 +79,16 @@ class RESTModelMixin:
         See the save method above.
         """
         # TODO: Fix circular imports
-        from .autoupdate import inform_changed_data
+        from .autoupdate import inform_changed_data, inform_deleted_data
         # Django sets the pk of the instance to None after deleting it. But
         # we need the pk to tell the autoupdate system which element was deleted.
         instance_pk = self.pk
         return_value = super().delete(*args, **kwargs)
-        self.pk = instance_pk
-        inform_changed_data(self, deleted=True, information=information)
-        self.pk = None
+        if self != self.get_root_rest_element():
+            # The deletion of a included element is a change of the master
+            # element.
+            # TODO: Does this work in any case with self.pk = None?
+            inform_changed_data(self.get_root_rest_element(), information=information)
+        else:
+            inform_deleted_data(self, information=information)
         return return_value

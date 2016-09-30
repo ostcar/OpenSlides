@@ -150,7 +150,11 @@ def send_data(message):
                 {'text': json.dumps(output)})
 
 
-def inform_changed_data(instance, deleted=False, information=None):
+def inform_changed_data(instance, information=None):
+    """
+    Informs the autoupdate system and the caching system about the creation or
+    update of an element.
+    """
     try:
         root_instance = instance.get_root_rest_element()
     except AttributeError:
@@ -159,16 +163,38 @@ def inform_changed_data(instance, deleted=False, information=None):
     else:
         collection_element = CollectionElement.from_instance(
             root_instance,
-            deleted=deleted and instance == root_instance,
             information=information)
 
-        # If currently there is an open database transaction, then the following
-        # function is only called, when the transaction is commited. If there
-        # is currently no transaction, then the function is called immediately.
-        def send_autoupdate():
-            try:
-                Channel('autoupdate.send_data').send(collection_element.as_channels_message())
-            except ChannelLayer.ChannelFull:
-                pass
+        transaction.on_commit(lambda collection_element: send_autoupdate(collection_element))
 
-        transaction.on_commit(send_autoupdate)
+def inform_deleted_data(collection_string, id, information=None):
+    """
+    Informs the autoupdate system and the caching system about the deletion of
+    an element.
+    """
+    collection_element = CollectionElement.from_values(
+        collection_string=collection_string,
+        id=id,
+        information=information)
+
+    # If currently there is an open database transaction, then the following
+    # function is only called, when the transaction is commited. If there
+    # is currently no transaction, then the function is called immediately.
+    def send_autoupdate():
+        try:
+            Channel('autoupdate.send_data').send(collection_element.as_channels_message())
+        except ChannelLayer.ChannelFull:
+            pass
+
+    transaction.on_commit(lambda collection_element: send_autoupdate(collection_element))
+
+
+def send_autoupdate(collection_element):
+    """
+    Helper function, that sends a collection_element through a channel to the
+    autoupdate system.
+    """
+    try:
+        Channel('autoupdate.send_data').send(collection_element.as_channels_message())
+    except ChannelLayer.ChannelFull:
+        pass
