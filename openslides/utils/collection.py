@@ -224,7 +224,7 @@ class Collection:
         """
         key = get_element_list_cache_key(self.collection_string)
         if raw:
-            key = self.make_key(key)
+            key = cache.make_key(key)
         return key
 
     def get_model(self):

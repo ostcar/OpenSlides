@@ -101,7 +101,6 @@ class RESTModelMixin:
         if not skip_autoupdate:
             if self != self.get_root_rest_element():
                 # The deletion of a included element is a change of the root element.
-                #TODO: Does this work in any case with self.pk == None?
                 inform_changed_data(self.get_root_rest_element(), information=information)
             else:
                 inform_deleted_data(self.get_collection_string(), instance_pk, information=information)
