@@ -165,7 +165,7 @@ def inform_changed_data(instance, information=None):
             root_instance,
             information=information)
 
-        transaction.on_commit(lambda collection_element: send_autoupdate(collection_element))
+        transaction.on_commit(lambda: send_autoupdate(collection_element))
 
 def inform_deleted_data(collection_string, id, information=None):
     """
@@ -186,7 +186,7 @@ def inform_deleted_data(collection_string, id, information=None):
         except ChannelLayer.ChannelFull:
             pass
 
-    transaction.on_commit(lambda collection_element: send_autoupdate(collection_element))
+    transaction.on_commit(lambda: send_autoupdate(collection_element))
 
 
 def send_autoupdate(collection_element):
