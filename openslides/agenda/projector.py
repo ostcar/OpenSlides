@@ -1,5 +1,6 @@
 from ..core.config import config
 from ..core.exceptions import ProjectorException
+from ..utils.collection import CollectionElement
 from ..utils.projector import ProjectorElement
 from .models import Item
 
