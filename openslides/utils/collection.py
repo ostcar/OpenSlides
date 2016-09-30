@@ -320,11 +320,11 @@ class Collection:
 
     def get_all_ids_redis(self):
         redis = get_redis_connection()
-        ids = redis.smembers(self.get_cache_key())
+        ids = redis.smembers(self.get_cache_key(raw=True))
         if not ids:
             ids = set(self.get_model().objects.values_list('pk', flat=True))
             if ids:
-                redis.sadd(self.get_cache_key(), *ids)
+                redis.sadd(self.get_cache_key(raw=True), *ids)
         # Redis returns the ids as string.
         ids = set(int(id) for id in ids)
         return ids
@@ -348,7 +348,7 @@ class Collection:
 
     def delete_id_from_cache_redis(self, id):
         redis = get_redis_connection()
-        redis.srem(self.get_cache_key(), id)
+        redis.srem(self.get_cache_key(raw=True), id)
 
     def delete_id_from_cache_other(self, id):
         ids = cache.get(self.get_cache_key())
@@ -377,9 +377,9 @@ class Collection:
 
     def add_id_to_cache_redis(self, id):
         redis = get_redis_connection()
-        if redis.exists(self.get_cache_key()):
+        if redis.exists(self.get_cache_key(raw=True)):
             # Only add the value if it is in the cache.
-            redis.sadd(self.get_cache_key(), id)
+            redis.sadd(self.get_cache_key(raw=True), id)
 
     def add_id_to_cache_other(self, id):
         ids = cache.get(self.get_cache_key())
