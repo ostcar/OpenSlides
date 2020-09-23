@@ -692,7 +692,9 @@ speaker:
 
 topic:
   id: number
-  title: string
+  title:
+    type: string
+    required: true
   text: HTML
 
   attachment_ids:
@@ -710,6 +712,7 @@ topic:
   meeting_id:
     type: relation
     to: meeting/topic_ids
+    required: true
 
 motion:
   id: number
